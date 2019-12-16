@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>SQL to PHP</title>
+        <style>
+            textarea {
+                width: 100%;
+                height: 12em;
+            }
+            h2 { font-size: 60%; font-family: Sans-Serif; }
+            pre { border: solid 1px #b6b6b6; padding: 5px; }
+        </style>
+    </head>
+    <body>
+        <h2>Paste your SQL query here</h2>
+        <textarea id="ta1"></textarea>
+        <h2>Copy this and paste it in your PHP code for Dolibarr</h2>
+        <textarea id="ta2"></textarea>
+        <h2>Copy this and paste it in a Mantis comment</h2>
+        <textarea id="ta3"></textarea>
+        <h2>Preview of the Mantis comment</h2>
+        <div id="d4"></div>
+    </body>
+    <script type="text/javascript">
+        let SQLKeywordRegexp = new RegExp(
+            '\\b(SELECT|UPDATE|SET|UPDATE'
+            + '|ORDER BY|DROP|FROM|WHERE|AND|OR|AS|NOT|IS NULL'
+            + '|(?:LEFT |RIGHT |INNER |OUTER )?JOIN|ON|GROUP BY|LIMIT'
+            + '|CURDATE|INTERVAL|SUM|COUNT|REGEX|LIKE|IN|COALESCE)\\b',
+            'gi'
+        );
+
+        function upperCaseSQLKeywords(sql) {
+            return sql.replace(SQLKeywordRegexp, (g)=>g.toUpperCase());
+        }
+
+        function prepareForDolibarrPHP(txt) {
+            return txt.replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/llx_/g, "'.MAIN_DB_PREFIX.'");
+        }
+
+        /**
+         * Returns the SQL query wrapped in quotes, where 'llx_' is replaced
+         * with MAIN_DB_PREFIX, single quotes are escaped etc.
+         * @param {string} sql
+         * @returns {string}
+         */
+        function makePHPSQL(sql) {
+            sql = sql.replace(/\r\n/g, '\n');
+            sql = upperCaseSQLKeywords(sql);
+            lines = sql.split('\n');
+            lines = lines.map(function(line, i) {
+                line = prepareForDolibarrPHP(line);
+                if (!i) {
+                    return "$sql = '" + line + "'";
+                } else {
+                    return "     . ' " + line + "'";
+                }
+            });
+            return lines.join('\n') + ';';
+        }
+
+        /**
+         * Returns the SQL query wrapped in some HTML markup for pasting in a Mantis
+         * Comment (Mantis accepts some HTML tags including <b> and <pre>)
+         * @param sql
+         * @returns {string}
+         */
+        function makeMantisSQL(sql) {
+            let boldUpperCase = (group) => '<b>'+group.toUpperCase()+'</b>';
+            sql = sql.replace(/\r\n/g, '\n');
+            sql = '<pre>' + sql.replace(SQLKeywordRegexp, boldUpperCase) + '</pre>';
+            return sql;
+        }
+
+        window.addEventListener('load', function () {
+            let ta = document.getElementById('ta1');
+            let ta2 = document.getElementById('ta2');
+            let ta3 = document.getElementById('ta3');
+            setInterval(function() {
+                ta2.value = makePHPSQL(ta.value);
+                let mantisCode = makeMantisSQL(ta.value);
+                ta3.value = mantisCode;
+                document.getElementById('d4').innerHTML = mantisCode;
+            }, 500);
+        });
+
+
+    </script>
+</html>
