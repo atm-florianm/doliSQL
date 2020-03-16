@@ -54,7 +54,7 @@
             lines = lines.map(function(line, i) {
                 line = prepareForDolibarrPHP(line);
                 if (!i) {
-                    return "$sql = '" + line + "'";
+                    return "$sql = /** @lang SQL */\n     '" + line + "'";
                 } else {
                     return "     . ' " + line + "'";
                 }
