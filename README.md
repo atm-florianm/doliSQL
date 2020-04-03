@@ -9,18 +9,20 @@ Now that your request is perfect, you want to use it in a PHP function and prese
 # Example
 You paste this:
 ```
-select product_price.price, product.price, propaldet.subprice, propaldet.buy_price_ht from llx_propaldet as propaldet
-inner join llx_product as product ON propaldet.fk_product = product.rowid
-left join llx_product_price as product_price on product_price.fk_product = product.rowid
-where propaldet.rowid = 445;
+select ec.rowid, ec.fk_socpeople from llx_element_contact as ec
+    inner JOIN llx_propal as propal ON propal.rowid = ec.element_id
+    INNER JOIN llx_c_type_contact as type ON type.rowid = ec.fk_c_type_contact
+    INNER join llx_user as user ON user.rowid = ec.fk_socpeople
+WHERE type.code = 'SALESREPFOLL';
 ```
 You get this: 
 ```php
 $sql = /** @lang SQL */
-     'SELECT product_price.price, product.price, propaldet.subprice, propaldet.buy_price_ht FROM '.MAIN_DB_PREFIX.'propaldet AS propaldet'
-     . ' INNER JOIN '.MAIN_DB_PREFIX.'product AS product ON propaldet.fk_product = product.rowid'
-     . ' LEFT JOIN '.MAIN_DB_PREFIX.'product_price AS product_price ON product_price.fk_product = product.rowid'
-     . ' WHERE propaldet.rowid = 445;';
+     'SELECT ec.rowid, ec.fk_socpeople FROM '.MAIN_DB_PREFIX.'element_contact AS ec'
+     . '     INNER JOIN '.MAIN_DB_PREFIX.'propal AS propal ON propal.rowid = ec.element_id'
+     . '     INNER JOIN '.MAIN_DB_PREFIX.'c_type_contact AS type ON type.rowid = ec.fk_c_type_contact'
+     . '     INNER JOIN '.MAIN_DB_PREFIX.'user AS user ON user.rowid = ec.fk_socpeople'
+     . ' WHERE type.code = \'SALESREPFOLL\';';
 ```
 
 # Caveat / Disclaimer
