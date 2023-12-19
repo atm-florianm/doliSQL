@@ -16,10 +16,13 @@
         <textarea id="ta1"></textarea>
         <h2>Copy this and paste it in your PHP code for Dolibarr</h2>
         <textarea id="ta2"></textarea>
-        <h2>Copy this and paste it in a Mantis comment</h2>
-        <textarea id="ta3"></textarea>
-        <h2>Preview of the Mantis comment</h2>
-        <div id="d4"></div>
+        <details>
+            <summary>HTML Markup</summary>
+            <h2>Copy this and paste it in a text input that allows simple HTML markup</h2>
+            <textarea id="ta3"></textarea>
+            <h2>Preview of the HTML markup</h2>
+            <div id="d4"></div>
+        </details>
     </body>
     <script type="text/javascript">
         let SQLKeywordRegexp = new RegExp(
@@ -35,10 +38,15 @@
             return sql.replace(SQLKeywordRegexp, (g)=>g.toUpperCase());
         }
 
-        function prepareForDolibarrPHP(txt) {
-            return txt.replace(/\\/g, '\\\\')
-                .replace(/'/g, "\\'")
-                .replace(/llx_/g, "'.MAIN_DB_PREFIX.'");
+        function prepareForDolibarrPHP(txt, usedoublequotes = true) {
+            txt = txt.replace(/\\/g, '\\\\');
+            if (usedoublequotes) {
+                txt = txt.replace(/"/g, '\\"');
+            } else {
+                txt = txt.replace(/'/g, '\\\'');
+            }
+            txt = txt.replace(/llx_/g, usedoublequotes ? `".MAIN_DB_PREFIX."` : `'.MAIN_DB_PREFIX.'`);
+            return txt;
         }
 
         /**
@@ -47,28 +55,31 @@
          * @param {string} sql
          * @returns {string}
          */
-        function makePHPSQL(sql) {
+        function makePHPSQL(sql, usedoublequotes = true) {
             sql = sql.replace(/\r\n/g, '\n');
             sql = upperCaseSQLKeywords(sql);
             lines = sql.split('\n');
             lines = lines.map(function(line, i) {
-                line = prepareForDolibarrPHP(line);
+                line = prepareForDolibarrPHP(line, usedoublequotes);
                 if (!i) {
-                    return "$sql = /** @lang SQL */\n     '" + line + "'";
+                    return usedoublequotes ?
+                        `$sql = /** @lang SQL */\n     "${line}"` :
+                        `$sql = /** @lang SQL */\n     '${line}'`;
                 } else {
-                    return "     . ' " + line + "'";
+                    return usedoublequotes ?
+                        `     . " ${line}"` :
+                        `     . ' ${line}'`;
                 }
             });
             return lines.join('\n') + ';';
         }
 
         /**
-         * Returns the SQL query wrapped in some HTML markup for pasting in a Mantis
-         * Comment (Mantis accepts some HTML tags including <b> and <pre>)
+         * Returns the SQL query wrapped in some HTML markup for pasting
          * @param sql
          * @returns {string}
          */
-        function makeMantisSQL(sql) {
+        function wrapSQLInHTML(sql) {
             let boldUpperCase = (group) => '<b>'+group.toUpperCase()+'</b>';
             sql = sql.replace(/\r\n/g, '\n');
             sql = '<pre>' + sql.replace(SQLKeywordRegexp, boldUpperCase) + '</pre>';
@@ -81,7 +92,7 @@
             let ta3 = document.getElementById('ta3');
             setInterval(function() {
                 ta2.value = makePHPSQL(ta.value);
-                let mantisCode = makeMantisSQL(ta.value);
+                let mantisCode = wrapSQLInHTML(ta.value);
                 ta3.value = mantisCode;
                 document.getElementById('d4').innerHTML = mantisCode;
             }, 500);
